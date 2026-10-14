@@ -65,6 +65,9 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
             .scrollIndicators(.hidden)
             .scrollPosition(id: $selectedPageID)
             .modifier(SoftScrollEdgeEffect())
+            // The close button brings in a navigation bar; let pages keep their own top
+            // spacing instead of being pushed down by the bar's height.
+            .ignoresSafeArea(.container, edges: hasLastPageAccessory ? .top : [])
             .toolbar {
                 if hasLastPageAccessory {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -93,11 +96,9 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
                         .animation(.easeInOut(duration: 0.2), value: currentPage)
                     }
 
-                    if isOnLastPage && hasLastPageAccessory {
-                        lastPageAccessory
-                            .padding(.horizontal, 28)
-                            .transition(.opacity)
-                    } else if !versionNotes.isEmpty {
+                    if !versionNotes.isEmpty {
+                        let showsAccessory = isOnLastPage && hasLastPageAccessory
+
                         Button {
                             if isOnLastPage {
                                 onDoneTap()
@@ -120,6 +121,18 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
                         .buttonStyle(.borderedProminent)
                         .padding(.horizontal, 28)
                         .tint(configuration.accentColor)
+                        // The accessory takes the button's exact frame, so it matches the
+                        // Next/Done size at every Dynamic Type setting.
+                        .opacity(showsAccessory ? 0 : 1)
+                        .allowsHitTesting(!showsAccessory)
+                        .accessibilityHidden(showsAccessory)
+                        .overlay {
+                            if showsAccessory {
+                                lastPageAccessory
+                                    .padding(.horizontal, 28)
+                                    .transition(.opacity)
+                            }
+                        }
                     }
                 }
                 .animation(.smooth, value: isOnLastPage)
