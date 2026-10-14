@@ -17,6 +17,12 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
 
+    /// When the host supplies a last-page accessory, it replaces the Done button on the last
+    /// page and a close button in the toolbar becomes the explicit way out.
+    private var hasLastPageAccessory: Bool {
+        LastPageAccessory.self != EmptyView.self
+    }
+
     private var currentPage: Int {
         return selectedPageID ?? 0
     }
@@ -59,6 +65,13 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
             .scrollIndicators(.hidden)
             .scrollPosition(id: $selectedPageID)
             .modifier(SoftScrollEdgeEffect())
+            .toolbar {
+                if hasLastPageAccessory {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        closeButton
+                    }
+                }
+            }
         }
         .modifier(
             SafeAreaView {
@@ -80,13 +93,11 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
                         .animation(.easeInOut(duration: 0.2), value: currentPage)
                     }
 
-                    if isOnLastPage {
+                    if isOnLastPage && hasLastPageAccessory {
                         lastPageAccessory
                             .padding(.horizontal, 28)
                             .transition(.opacity)
-                    }
-
-                    if !versionNotes.isEmpty {
+                    } else if !versionNotes.isEmpty {
                         Button {
                             if isOnLastPage {
                                 onDoneTap()
@@ -120,6 +131,15 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
         ])
         .presentationDragIndicator(.visible)
         .presentationBackground(sheetBackgroundStyle)
+    }
+
+    @ViewBuilder
+    private var closeButton: some View {
+        if #available(iOS 26, *) {
+            Button(role: .close) { onDoneTap() }
+        } else {
+            Button("Close", systemImage: "xmark") { onDoneTap() }
+        }
     }
 
     private func onDoneTap() {
