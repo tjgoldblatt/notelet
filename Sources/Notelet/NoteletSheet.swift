@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct NoteletSheet: ViewModifier {
+struct NoteletSheet<LastPageAccessory: View>: ViewModifier {
     @State private var isPresented = false
 
     let notes: [NoteletVersionNotes]
@@ -15,6 +15,7 @@ struct NoteletSheet: ViewModifier {
     let onDismiss: () -> Void
     let configuration: NoteletConfiguration
     let userDefaults: UserDefaults
+    let lastPageAccessory: LastPageAccessory
 
     private var versionToShow: String? {
         switch version {
@@ -77,7 +78,8 @@ struct NoteletSheet: ViewModifier {
             .sheet(isPresented: $isPresented, onDismiss: handleDismiss) {
                 NoteletSheetContentView(
                     versionNotes: versionNotes,
-                    configuration: configuration
+                    configuration: configuration,
+                    lastPageAccessory: lastPageAccessory
                 )
             }
     }
@@ -106,13 +108,35 @@ extension View {
         configuration: NoteletConfiguration = .init(),
         userDefaults: UserDefaults = .standard
     ) -> some View {
+        noteletSheet(
+            notes: notes,
+            version: version,
+            onDismiss: onDismiss,
+            configuration: configuration,
+            userDefaults: userDefaults
+        ) {
+            EmptyView()
+        }
+    }
+
+    /// Attach a release-notes sheet with a custom view shown above the Done
+    /// button on the last page, e.g. a call to action like "Leave a review".
+    public func noteletSheet<LastPageAccessory: View>(
+        notes: [NoteletVersionNotes],
+        version: NoteletPresentedVersion? = nil,
+        onDismiss: @escaping () -> Void = { },
+        configuration: NoteletConfiguration = .init(),
+        userDefaults: UserDefaults = .standard,
+        @ViewBuilder lastPageAccessory: () -> LastPageAccessory
+    ) -> some View {
         modifier(
             NoteletSheet(
                 notes: notes,
                 version: version,
                 onDismiss: onDismiss,
                 configuration: configuration,
-                userDefaults: userDefaults
+                userDefaults: userDefaults,
+                lastPageAccessory: lastPageAccessory()
             )
         )
     }

@@ -7,9 +7,10 @@
 
 import SwiftUI
 
-struct NoteletSheetContentView: View {
+struct NoteletSheetContentView<LastPageAccessory: View>: View {
     let versionNotes: [NoteletVersionNoteItem]
     let configuration: NoteletConfiguration
+    let lastPageAccessory: LastPageAccessory
 
     @State private var selectedPageID: Int? = 0
 
@@ -79,6 +80,12 @@ struct NoteletSheetContentView: View {
                         .animation(.easeInOut(duration: 0.2), value: currentPage)
                     }
 
+                    if isOnLastPage {
+                        lastPageAccessory
+                            .padding(.horizontal, 28)
+                            .transition(.opacity)
+                    }
+
                     if !versionNotes.isEmpty {
                         Button {
                             if isOnLastPage {
@@ -104,6 +111,7 @@ struct NoteletSheetContentView: View {
                         .tint(configuration.accentColor)
                     }
                 }
+                .animation(.smooth, value: isOnLastPage)
                 .safeAreaPadding(.bottom, isIPad ? 24 : 0)
             }
         )
