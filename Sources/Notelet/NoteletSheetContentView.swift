@@ -64,8 +64,10 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
             .scrollTargetBehavior(.paging)
             .scrollIndicators(.hidden)
             .scrollPosition(id: $selectedPageID)
-            .modifier(SoftScrollEdgeEffect())
-            .navigationBarTitleDisplayMode(.inline)
+            .modifier(SoftScrollEdgeEffect(hidesTopEdge: hasLastPageAccessory))
+            // The close button brings in a navigation bar; let pages keep their own top
+            // spacing instead of being pushed down by the bar's height.
+            .ignoresSafeArea(.container, edges: hasLastPageAccessory ? .top : [])
             .toolbar {
                 if hasLastPageAccessory {
                     ToolbarItem(placement: .topBarTrailing) {
