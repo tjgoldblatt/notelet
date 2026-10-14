@@ -64,7 +64,7 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
             .scrollTargetBehavior(.paging)
             .scrollIndicators(.hidden)
             .scrollPosition(id: $selectedPageID)
-            .modifier(SoftScrollEdgeEffect())
+            .modifier(SoftScrollEdgeEffect(hidesTopEdge: hasLastPageAccessory))
             // The close button brings in a navigation bar; let pages keep their own top
             // spacing instead of being pushed down by the bar's height.
             .ignoresSafeArea(.container, edges: hasLastPageAccessory ? .top : [])
@@ -169,10 +169,15 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
 }
 
 fileprivate struct SoftScrollEdgeEffect: ViewModifier {
+    /// Pages extend under the close button's bar; without this the top edge effect blurs
+    /// each page's title at rest.
+    var hidesTopEdge = false
+
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             content
                 .scrollEdgeEffectStyle(.soft, for: .all)
+                .scrollEdgeEffectHidden(hidesTopEdge, for: .top)
         } else {
             content
         }
