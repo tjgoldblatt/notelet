@@ -119,8 +119,9 @@ extension View {
         }
     }
 
-    /// Attach a release-notes sheet with a custom view shown above the Done
-    /// button on the last page, e.g. a call to action like "Leave a review".
+    /// Attach a release-notes sheet whose last page shows a custom view in
+    /// place of the Done button, e.g. a call to action like "Leave a review".
+    /// A close button in the toolbar keeps the sheet explicitly dismissible.
     public func noteletSheet<LastPageAccessory: View>(
         notes: [NoteletVersionNotes],
         version: NoteletPresentedVersion? = nil,
