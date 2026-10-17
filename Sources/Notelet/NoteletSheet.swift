@@ -15,7 +15,7 @@ struct NoteletSheet<LastPageAccessory: View>: ViewModifier {
     let onDismiss: () -> Void
     let configuration: NoteletConfiguration
     let userDefaults: UserDefaults
-    let lastPageAccessory: LastPageAccessory
+    let lastPageAccessory: LastPageAccessory?
 
     private var versionToShow: String? {
         switch version {
@@ -108,20 +108,21 @@ extension View {
         configuration: NoteletConfiguration = .init(),
         userDefaults: UserDefaults = .standard
     ) -> some View {
-        noteletSheet(
-            notes: notes,
-            version: version,
-            onDismiss: onDismiss,
-            configuration: configuration,
-            userDefaults: userDefaults
-        ) {
-            EmptyView()
-        }
+        modifier(
+            NoteletSheet<EmptyView>(
+                notes: notes,
+                version: version,
+                onDismiss: onDismiss,
+                configuration: configuration,
+                userDefaults: userDefaults,
+                lastPageAccessory: nil
+            )
+        )
     }
 
     /// Attach a release-notes sheet whose last page shows a custom view in
     /// place of the Done button, e.g. a call to action like "Leave a review".
-    /// A close button in the toolbar keeps the sheet explicitly dismissible.
+    /// A close button in the top-trailing corner keeps the sheet dismissible.
     public func noteletSheet<LastPageAccessory: View>(
         notes: [NoteletVersionNotes],
         version: NoteletPresentedVersion? = nil,

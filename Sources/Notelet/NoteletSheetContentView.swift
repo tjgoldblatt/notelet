@@ -10,18 +10,14 @@ import SwiftUI
 struct NoteletSheetContentView<LastPageAccessory: View>: View {
     let versionNotes: [NoteletVersionNoteItem]
     let configuration: NoteletConfiguration
-    let lastPageAccessory: LastPageAccessory
+    /// When supplied, replaces the Done button on the last page, and a close button in the
+    /// top-trailing corner becomes the explicit way out.
+    let lastPageAccessory: LastPageAccessory?
 
     @State private var selectedPageID: Int? = 0
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.colorScheme) private var colorScheme
-
-    /// When the host supplies a last-page accessory, it replaces the Done button on the last
-    /// page and a close button in the toolbar becomes the explicit way out.
-    private var hasLastPageAccessory: Bool {
-        LastPageAccessory.self != EmptyView.self
-    }
 
     private var currentPage: Int {
         return selectedPageID ?? 0
@@ -64,16 +60,15 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
             .scrollTargetBehavior(.paging)
             .scrollIndicators(.hidden)
             .scrollPosition(id: $selectedPageID)
-            .modifier(SoftScrollEdgeEffect(hidesTopEdge: hasLastPageAccessory))
-            // The close button brings in a navigation bar; let pages keep their own top
-            // spacing instead of being pushed down by the bar's height.
-            .ignoresSafeArea(.container, edges: hasLastPageAccessory ? .top : [])
-            .toolbar {
-                if hasLastPageAccessory {
-                    ToolbarItem(placement: .topBarTrailing) {
-                        closeButton
-                    }
-                }
+            .modifier(SoftScrollEdgeEffect())
+        }
+        // An overlay rather than a toolbar item: a toolbar brings in a navigation bar that
+        // pushes every page's content down.
+        .overlay(alignment: .topTrailing) {
+            if lastPageAccessory != nil {
+                closeButton
+                    .padding(.top, 12)
+                    .padding(.trailing, 16)
             }
         }
         .modifier(
@@ -97,7 +92,7 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
                     }
 
                     if !versionNotes.isEmpty {
-                        let showsAccessory = isOnLastPage && hasLastPageAccessory
+                        let showsAccessory = isOnLastPage && lastPageAccessory != nil
 
                         Button {
                             if isOnLastPage {
@@ -127,15 +122,15 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
                         .allowsHitTesting(!showsAccessory)
                         .accessibilityHidden(showsAccessory)
                         .overlay {
-                            if showsAccessory {
+                            if showsAccessory, let lastPageAccessory {
                                 lastPageAccessory
                                     .padding(.horizontal, 28)
                                     .transition(.opacity)
                             }
                         }
+                        .animation(.smooth, value: showsAccessory)
                     }
                 }
-                .animation(.smooth, value: isOnLastPage)
                 .safeAreaPadding(.bottom, isIPad ? 24 : 0)
             }
         )
@@ -150,8 +145,15 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
     private var closeButton: some View {
         if #available(iOS 26, *) {
             Button(role: .close) { onDoneTap() }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.glass)
+                .buttonBorderShape(.circle)
+                .controlSize(.large)
         } else {
             Button("Close", systemImage: "xmark") { onDoneTap() }
+                .labelStyle(.iconOnly)
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.circle)
         }
     }
 
@@ -169,15 +171,10 @@ struct NoteletSheetContentView<LastPageAccessory: View>: View {
 }
 
 fileprivate struct SoftScrollEdgeEffect: ViewModifier {
-    /// Pages extend under the close button's bar; without this the top edge effect blurs
-    /// each page's title at rest.
-    var hidesTopEdge = false
-
     func body(content: Content) -> some View {
         if #available(iOS 26, *) {
             content
                 .scrollEdgeEffectStyle(.soft, for: .all)
-                .scrollEdgeEffectHidden(hidesTopEdge, for: .top)
         } else {
             content
         }
